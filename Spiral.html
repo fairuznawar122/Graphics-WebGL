@@ -1,0 +1,98 @@
+
+<html>
+<title>Assignment 1 Part A, 170104122, Fairuz Nawar</title>
+<canvas id="webglcanvas" width="700" height="700"></canvas>
+
+<script>
+
+    var canvas = document.getElementById("webglcanvas"); 
+    var  gl = canvas.getContext("webgl");
+	
+    var vertexShaderSource =
+       `attribute vec3 a_coords;
+      
+		void main() {	
+            gl_Position = vec4(a_coords.x, a_coords.y, a_coords.z, 1.0);
+			
+			float l1 = 10.0*distance(a_coords.x ,0.0);
+			float l2 = 10.0*distance(a_coords.y ,0.0);
+			float d = 2.0 * sqrt(l1*l1 +l2*l2);
+			gl_PointSize =d;	
+			
+        }`;
+
+	var fragmentShaderSource =
+
+       `precision mediump float;
+        uniform vec3 u_color;
+        void main() {
+            gl_FragColor = vec4(u_color, 1.0);
+        }`;
+
+    var vsh = gl.createShader( gl.VERTEX_SHADER );
+    gl.shaderSource( vsh, vertexShaderSource );
+    gl.compileShader( vsh );
+	
+    var fsh = gl.createShader( gl.FRAGMENT_SHADER );
+    gl.shaderSource( fsh, fragmentShaderSource );
+    gl.compileShader( fsh );
+    
+    var prog = gl.createProgram(); 
+    
+    gl.attachShader( prog, vsh ); 
+    gl.attachShader( prog, fsh );
+    gl.linkProgram( prog ); 
+    gl.useProgram(prog); 
+
+    var a_coords_location = gl.getAttribLocation(prog, "a_coords");
+
+    var coords = [0.0, 0.0, 0.0] ;
+	
+    var a_coords_buffer = gl.createBuffer(); 
+    gl.bindBuffer(gl.ARRAY_BUFFER, a_coords_buffer); 
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array( coords), gl.STATIC_DRAW); 
+    gl.vertexAttribPointer(a_coords_location, 3, gl.FLOAT, false, 0, 0); 
+    gl.enableVertexAttribArray(a_coords_location);
+	
+	var u_color_location = gl.getUniformLocation(prog, "u_color");
+	var color = new Float32Array( [1.0, 0.0, 0.0] );
+	gl.uniform3fv(u_color_location,  color);
+	
+	
+	gl.clearColor(0.950, 0.921, 0.703, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.POINTS, 0, 1); 
+	
+	// theta for spiral
+	var increment = Math.PI/15;   	    
+	var theta = increment;
+	
+	canvas.onmousedown = function ()
+	{  
+		
+		
+		for (var i=0;i<5;i++){	
+			var shiftX = 0.02 * theta * Math.cos(theta); //spiral equation	
+			var shiftY = 0.02 * theta * Math.sin(theta);  //spiral equation
+						
+			theta = theta + increment; //incrementing theta to get new value
+			
+			coords.push(shiftX,shiftY,0.0);
+		}
+			
+		var len = coords.length;
+
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(coords), gl.STATIC_DRAW);			
+		
+		gl.clearColor(0.950, 0.921, 0.703, 1.0);
+		gl.clear(gl.COLOR_BUFFER_BIT);
+		gl.drawArrays(gl.POINTS, 0, coords.length);
+	
+	 
+	};
+
+</script>
+
+
+
+</html>

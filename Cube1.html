@@ -1,0 +1,247 @@
+<!-- saved from url=(0065)http://math.hws.edu/graphicsbook/source/webgl/simple-texture.html -->
+<!-- modified by Mohammad Imrul Jubair -->
+
+<html>
+<title>Assignment 3: Part A </title>
+<canvas id="webglcanvas" width="800" height="800"></canvas>
+
+<script>
+
+    var canvas = document.getElementById("webglcanvas"); 
+	document.addEventListener('keydown', onKeyUp, false);
+    var  gl = canvas.getContext("webgl");
+	
+							
+    var vertexShaderSource =
+       `attribute vec3 a_coords;
+	    attribute vec3 a_colors;
+	 	uniform mat4 u_RotY;
+		uniform mat4 u_RotX;
+		uniform mat4 u_Scale;
+		varying vec3 v_color;
+		varying vec3 colors;
+		
+        
+		void main() {
+            gl_Position = u_RotX*u_RotY*u_Scale*vec4(a_coords, 1.0);
+			v_color = a_colors;
+			
+			
+        }`;
+
+	var fragmentShaderSource =
+       `precision mediump float;
+        varying vec3 v_color;
+        void main() {
+            gl_FragColor = vec4(v_color, 1.0);
+        }`;
+    
+   var coords = new Float32Array([
+
+		 // Front face
+        -0.4, -0.4, 0.6,
+        0.6, -0.4, 0.6,
+        0.6, 0.6, 0.6,
+        -0.4, 0.6, 0.6,
+
+        // Back face
+        -0.4, -0.4, -0.4,
+        -0.4, 0.6, -0.4,
+        0.6, 0.6, -0.4,
+        0.6, -0.4, -0.4,
+
+        // Top face
+        -0.4, 0.6, -0.4,
+        -0.4, 0.6, 0.6,
+        0.6, 0.6, 0.6,
+        0.6, 0.6, -0.4,
+
+        // Bottom face
+        -0.4, -0.4, -0.4,
+        0.6, -0.4, -0.4,
+        0.6, -0.4, 0.6,
+        -0.4, -0.4, 0.6,
+
+        // Right face
+        0.6, -0.4, -0.4,
+        0.6, 0.6, -0.4,
+        0.6, 0.6, 0.6,
+        0.6, -0.4, 0.6,
+
+        // Left face
+        -0.4, -0.4, -0.4,
+        -0.4, -0.4, 0.6,
+        -0.4, 0.6, 0.6,
+        -0.4, 0.6, -0.4
+        
+    ]);
+
+    var vsh = gl.createShader( gl.VERTEX_SHADER );
+    gl.shaderSource( vsh, vertexShaderSource );
+    gl.compileShader( vsh );
+	
+    var fsh = gl.createShader( gl.FRAGMENT_SHADER );
+    gl.shaderSource( fsh, fragmentShaderSource );
+    gl.compileShader( fsh );
+ 
+    
+    var prog = gl.createProgram(); 
+    
+    gl.attachShader( prog, vsh ); 
+    gl.attachShader( prog, fsh );
+    gl.linkProgram( prog ); 
+    gl.useProgram(prog); 
+	
+	var colors = coords.map(x => Math.abs(x));
+    var a_coords_location = gl.getAttribLocation(prog, "a_coords");
+
+   
+
+	
+    var a_coords_buffer = gl.createBuffer(); 
+    gl.bindBuffer(gl.ARRAY_BUFFER, a_coords_buffer); 
+    gl.bufferData(gl.ARRAY_BUFFER, coords, gl.STATIC_DRAW); 
+    gl.vertexAttribPointer(a_coords_location, 3, gl.FLOAT, false, 0, 0); 
+    gl.enableVertexAttribArray(a_coords_location);
+	
+	
+	var a_colors_location = gl.getAttribLocation(prog, "a_colors");
+	
+	var a_colors_buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, a_colors_buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+    gl.vertexAttribPointer(a_colors_location, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(a_colors_location);									
+	
+	var indices = new Uint8Array([
+									0, 1, 2,      0, 2, 3,    // Front face
+                                    4, 5, 6,      4, 6, 7,    // Back face
+                                    8, 9, 10,     8, 10, 11,  // Top face
+                                    12, 13, 14,   12, 14, 15, // Bottom face
+                                    16, 17, 18,   16, 18, 19, // Right face
+                                    20, 21, 22,   20, 22, 23  // Left face
+								]);
+	var bufferInd = gl.createBuffer();
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bufferInd);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+	
+	
+	
+	var degreeX = 45;
+	var degreeY = 45;
+	var x = 0.6;
+	var y = 0.5;
+	var z = 0.6;
+	var f = 0.04;
+	
+	gl.clearColor(1.0, 1.0, 1.0, 1.0);
+    gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.CULL_FACE);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	
+	function draw(f,degreeX,degreeY){
+	
+	var u_scale_location = gl.getUniformLocation(prog, "u_Scale");
+	var u_rotateY_location = gl.getUniformLocation(prog, "u_RotY");
+	var rad = degreeY*Math.PI/180;
+	
+    var rotateYMatrix = new Float32Array( [Math.cos(rad),  0.0,  -Math.sin(rad),  0.0,
+										   0.0,            1.0,   0.0,            0.0,
+                                           Math.sin(rad),  0.0,   Math.cos(rad),  0.0,
+                                      	   0.0,            0.0,   0.0,            1.0] );
+	
+	gl.uniformMatrix4fv(u_rotateY_location, false, rotateYMatrix);
+	
+	var u_rotateX_location = gl.getUniformLocation(prog, "u_RotX");
+	
+	var rad = degreeX*Math.PI/180;
+    var rotateXMatrix = new Float32Array( [1.0,  0.0,            0.0,            0.0,
+                                      	   0.0,  Math.cos(rad),  Math.sin(rad),  0.0,
+                                     	   0.0, -Math.sin(rad),  Math.cos(rad),  0.0,
+                                      	   0.0,  0.0,            0.0,            1.0] );
+	gl.uniformMatrix4fv(u_rotateX_location, false, rotateXMatrix);
+	
+	var scaleMatrix = new Float32Array( [x,   0.0,  0.0,  0.0,
+                                      	 0.0,  y,   0.0,  0.0,
+                                     	 0.0,  0.0,  z,   0.0,
+                                      	 0.0,  0.0,  0.0,  1.0] );
+	gl.uniformMatrix4fv(u_scale_location, false, scaleMatrix);									 
+										 
+	//gl.clearColor(0.75, 0.75, 0.75, 1.0);
+    //gl.clear(gl.COLOR_BUFFER_BIT);	
+	var a_colors_buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, a_colors_buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+    gl.vertexAttribPointer(a_colors_location, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(a_colors_location);	
+	gl.drawElements(gl.TRIANGLES, 3*12, gl.UNSIGNED_BYTE, 0);
+    
+    var a_colors_buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, a_colors_buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0.0,0.0,0.0]), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(a_colors_location, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(a_colors_location);	
+    
+    
+
+	var scaleMatrix = new Float32Array( [x+f,   0.0,  0.0,  0.0,
+                                      	 0.0,  y+f,   0.0,  0.0,
+                                     	 0.0,  0.0,  z+f,   0.0,
+                                      	 0.0,  0.0,  0.0,  1.0] );
+	gl.uniformMatrix4fv(u_scale_location, false, scaleMatrix);	
+    
+    gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.CULL_FACE);
+										 
+										 
+	gl.drawElements(gl.TRIANGLES, 3*12, gl.UNSIGNED_BYTE, 0);	
+    }
+	draw(f,degreeX,degreeY);
+	
+	
+function onKeyUp(event)
+{
+    if (event.key == 'ArrowRight')
+    {
+
+   degreeX = degreeX + 25.0;
+
+	if (degreeX >= 360) {
+	  degreeX = 45.0;
+	}
+
+	draw(f,degreeX,degreeY);
+        		
+    }
+    else if (event.key == 'ArrowLeft')
+    {
+	degreeY = degreeY + 25.0;
+
+	if (degreeY >= 360) {
+	  thetay = 45.0;
+	}
+	draw(f,degreeX,degreeY);
+		
+    }
+	
+	else if (event.key == 'ArrowUp'){
+	
+	 
+	f=f+0.05;
+	draw(f,degreeX,degreeY);		
+	}
+	else if (event.key == 'ArrowDown'){
+    
+						f=f-0.05;
+						if(f<0.02){
+						f =0.02;
+						}
+						draw(f,degreeX,degreeY);      
+                				
+            } 
+	
+	}
+
+</script>
+
+</html>
